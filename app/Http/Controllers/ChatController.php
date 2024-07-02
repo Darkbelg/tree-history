@@ -9,6 +9,7 @@ use App\Models\SystemMessage;
 use App\Jobs\StoreChatMessage;
 use App\Jobs\UpdateChatMessage;
 use App\Models\LargeLanguageModel;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use App\Service\Chat as ChatService;
 use Illuminate\Support\Facades\Auth;
@@ -60,32 +61,37 @@ class ChatController extends Controller
         ]);
     }
 
+
     public function show(Chat $chat)
     {
-        $messages = $chat->messages;
+        $messages = $chat->load('messages')->messages;
+        $tree = $this->buildTree($messages);
 
-        $tree = $messages->map(function($message) use ($messages){
-            if($message->parent_id === null){
-                return $this->createBranch($message, $messages);
-            };
-        });
 
         return Inertia::render('Tree', [
             'messages' => $tree
         ]);
     }
 
-    private function createBranch($node, $messages){
-        return $messages->filter(fn($message)=>$node->id === $message->parent_id)->map(function($message,$key) use ($node,$messages){
-                return
-                [
-                    'id' => $node->id,
-                    'content' => $node->content,
-                    'branches' => $this->createBranch($message,$messages)
-                ];
-        })->values();
+    private function buildTree(Collection $messages): Collection
+    {
+        $messageMap = $messages->keyBy('id');
+
+        return $messages->whereNull('parent_id')
+            ->map(fn($message) => $this->createBranch($message, $messageMap));
     }
 
+    private function createBranch($node, Collection $messageMap): array
+    {
+        return [
+            'id' => $node->id,
+            'content' => $node->content,
+            'branches' => $messageMap
+                ->where('parent_id', $node->id)
+                ->map(fn($childMessage) => $this->createBranch($childMessage, $messageMap))
+                ->values()
+        ];
+    }
     public function addNode(Request $request)
     {
         $content = $request->input('content');
