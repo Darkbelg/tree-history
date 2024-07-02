@@ -63,9 +63,27 @@ class ChatController extends Controller
     public function show(Chat $chat)
     {
         $messages = $chat->messages;
-        return response()->json([
-            'messages' => $messages
+
+        $tree = $messages->map(function($message) use ($messages){
+            if($message->parent_id === null){
+                return $this->createBranch($message, $messages);
+            };
+        });
+
+        return Inertia::render('Tree', [
+            'messages' => $tree
         ]);
+    }
+
+    private function createBranch($node, $messages){
+        return $messages->filter(fn($message)=>$node->id === $message->parent_id)->map(function($message,$key) use ($node,$messages){
+                return
+                [
+                    'id' => $node->id,
+                    'content' => $node->content,
+                    'branches' => $this->createBranch($message,$messages)
+                ];
+        })->values();
     }
 
     public function addNode(Request $request)
