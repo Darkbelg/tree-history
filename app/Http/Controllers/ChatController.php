@@ -67,18 +67,19 @@ class ChatController extends Controller
         $messages = $chat->load('messages')->messages;
         $tree = $this->buildTree($messages);
 
-
+        // dd($tree);
         return Inertia::render('Tree', [
             'messages' => $tree
         ]);
     }
 
-    private function buildTree(Collection $messages): Collection
+    private function buildTree(Collection $messages): array
     {
         $messageMap = $messages->keyBy('id');
 
         return $messages->whereNull('parent_id')
-            ->map(fn($message) => $this->createBranch($message, $messageMap));
+            ->map(fn($message) => $this->createBranch($message, $messageMap))
+            ->toArray();
     }
 
     private function createBranch($node, Collection $messageMap): array
@@ -90,21 +91,7 @@ class ChatController extends Controller
                 ->where('parent_id', $node->id)
                 ->map(fn($childMessage) => $this->createBranch($childMessage, $messageMap))
                 ->values()
+                ->toArray()
         ];
-    }
-    public function addNode(Request $request)
-    {
-        $content = $request->input('content');
-        $parentId = $request->input('parentId');
-
-        // In a real application, you would update the conversation in the database
-        // For this example, we'll just return a new node
-        $newNode = [
-            'id' => uniqid(),
-            'content' => $content,
-            'children' => []
-        ];
-
-        return response()->json($newNode);
     }
 }
