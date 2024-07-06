@@ -3,15 +3,17 @@ import { ref } from 'vue';
 
 const leafPosition = ref(0);
 
-defineProps({ messages: Object });
+const props = defineProps({ messages: Object });
 
 
 function next(){
-    leafPosition.value ++ ;
+    if(leafPosition.value < props.messages.length - 1) {
+        leafPosition.value ++ ;
+    }
 }
 
 function previous(){
-    if(leafPosition.value > 0){
+    if(leafPosition.value >= 0){
         leafPosition.value --;
     }
 }
@@ -19,20 +21,13 @@ function previous(){
 </script>
 
 <template>
-    <!-- <li v-for="message in messages">
-        <p class="m-3 bg-red-500"> {{ message.id }} </p>
-        <Branch :messages="message.branches"></Branch>
-    </li> -->
-
-    <li v-if="messages[leafPosition]">
-        <button v-if="leafPosition > 0" @click="previous">Prev</button>
-        <br/>
-        <br/>
-        <p>{{ leafPosition }}</p>
-        <br/>
-        <br/>
-        <button  @click="next">Next</button>
+    <li>
+        <div>
+            <button v-if="leafPosition > 0" @click="previous">Prev</button>
+            <p>{{ leafPosition + 1 }} / {{ messages.length }}</p>
+            <button v-if="leafPosition + 1 < messages.length" @click="next">Next</button>
+        </div>
         <p class="m-3 bg-red-500"> {{ messages[leafPosition].id }} </p>
-        <Branch :messages="messages[leafPosition].branches"></Branch>
+        <Branch v-if="messages[0].branches.length > 0" :messages="messages[leafPosition].branches"></Branch>
     </li>
 </template>

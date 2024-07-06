@@ -67,7 +67,6 @@ class ChatController extends Controller
         $messages = $chat->load('messages')->messages;
         $tree = $this->buildTree($messages);
 
-        // dd($tree);
         return Inertia::render('Tree', [
             'messages' => $tree
         ]);
@@ -78,7 +77,7 @@ class ChatController extends Controller
         $messageMap = $messages->keyBy('id');
 
         return $messages->whereNull('parent_id')
-            ->map(fn($message) => $this->createBranch($message, $messageMap))
+            ->map(fn ($message) => $this->createBranch($message, $messageMap))
             ->toArray();
     }
 
@@ -89,7 +88,7 @@ class ChatController extends Controller
             'content' => $node->content,
             'branches' => $messageMap
                 ->where('parent_id', $node->id)
-                ->map(fn($childMessage) => $this->createBranch($childMessage, $messageMap))
+                ->map(fn ($childMessage) => $this->createBranch($childMessage, $messageMap))
                 ->values()
                 ->toArray()
         ];
